@@ -2,8 +2,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-from matplotlib.patches import Polygon # 다각형 (유니폼 형태)
-from matplotlib.patches import Rectangle, Circle
+from matplotlib.patches import Rectangle
 
 # =========================================================
 # 1. 데이터 정의 (이전과 동일)
@@ -44,7 +43,7 @@ TEAM_COLORS = {
     "Borussia Monchengladbach": ["#000000", "#FFFFFF", "#009045"], 
     "Paris Saint-Germain": ["#004A95", "#DA291C", "#FFFFFF"],
     "AS Monaco": ["#C5AA74", "#FFFFFF", "#E30613"],
-    "Lille OSC": ["#004481", "#E63E3F", "#FFFFFF"], 
+    "Lille OSC": ["#004481", ["#E63E3F"], "#FFFFFF"], 
     "Olympique de Marseille": ["#00468C", "#FFFFFF", "#000000"], 
     "Juventus": ["#FFFFFF", "#000000", "#999999"],
     "Inter Milan": ["#004A95", "#FFFFFF", "#000000"],
@@ -55,123 +54,99 @@ TEAM_COLORS = {
 }
 
 # =========================================================
-# 2. 정면 유니폼 생성 함수 (Generative Art Function)
+# 2. 깃발 디자인 생성 함수 (Generative Art Function)
 # =========================================================
 
-def draw_uniform(ax, colors, pattern_type):
+def draw_flag(ax, colors, pattern_type):
     """
-    정면 시점으로 유니폼 디자인을 생성합니다.
+    주어진 색상과 패턴 타입으로 추상적인 깃발 디자인을 생성합니다.
     """
     C1, C2, C3 = colors # 메인, 보조, 패턴/배경색
     
-    shirt_width = 12
-    shirt_height = 14
+    flag_width = 15
+    flag_height = 10
     
-    # 1. 유니폼 기본 형태 (다각형 사용)
-    # 어깨선을 둥글게 표현
-    shirt_coords = np.array([
-        [-shirt_width/2, -shirt_height/2],  # 왼쪽 아래
-        [shirt_width/2, -shirt_height/2],   # 오른쪽 아래
-        [shirt_width/2, shirt_height/2 - 2],   # 오른쪽 어깨 아래
-        [shirt_width/2 - 2.5, shirt_height/2 + 1], # 오른쪽 어깨 끝
-        [2, shirt_height/2 + 2],                # 오른쪽 카라
-        [-2, shirt_height/2 + 2],               # 왼쪽 카라
-        [-shirt_width/2 + 2.5, shirt_height/2 + 1], # 왼쪽 어깨 끝
-        [-shirt_width/2, shirt_height/2 - 2],   # 왼쪽 어깨 아래
-    ])
+    # 1. 깃발 기본 배경 (메인 색상)
+    ax.add_patch(Rectangle((0, 0), flag_width, flag_height, 
+                           facecolor=C1, edgecolor='black', linewidth=1.5))
     
-    ax.add_patch(Polygon(shirt_coords, closed=True, 
-                         facecolor=C1, edgecolor='black', linewidth=1.5))
-
-    # 2. 소매 (팔꿈치 부분만 보이도록)
-    sleeve_width = 3
-    sleeve_height = 1.5
-    sleeve_offset_y = shirt_height/2 - 3 
+    # 2. 랜덤 패턴 생성
     
-    # 왼쪽 소매
-    ax.add_patch(Rectangle((-shirt_width/2 - sleeve_width/2, sleeve_offset_y - sleeve_height/2), 
-                           sleeve_width, sleeve_height, facecolor=C1, edgecolor='black', linewidth=1.5))
-    ax.add_patch(Rectangle((-shirt_width/2 - sleeve_width/2, sleeve_offset_y - sleeve_height/2), 
-                           sleeve_width, sleeve_height, facecolor=C2, edgecolor='none', linewidth=0, alpha=0.3)) # 색상 디테일
-    
-    # 오른쪽 소매
-    ax.add_patch(Rectangle((shirt_width/2 - sleeve_width/2, sleeve_offset_y - sleeve_height/2), 
-                           sleeve_width, sleeve_height, facecolor=C1, edgecolor='black', linewidth=1.5))
-    ax.add_patch(Rectangle((shirt_width/2 - sleeve_width/2, sleeve_offset_y - sleeve_height/2), 
-                           sleeve_width, sleeve_height, facecolor=C2, edgecolor='none', linewidth=0, alpha=0.3)) # 색상 디테일
-
-    # 3. 목 카라 (Collar)
-    collar_width = 4.5
-    collar_height = 1
-    collar_y = shirt_height/2 + 1.5
-    ax.add_patch(Rectangle((-collar_width/2, collar_y), collar_width, collar_height,
-                           facecolor=C2, edgecolor='black', linewidth=1))
-
-    # 4. 랜덤 패턴 생성 (Pattern Generation)
-    
-    # 패턴을 그릴 영역 (목 아래 몸통 부분)
-    pattern_x_min, pattern_x_max = -shirt_width/2, shirt_width/2
-    pattern_y_min, pattern_y_max = -shirt_height/2, shirt_height/2 + 0.5
-    
-    if pattern_type == "Stripe":
-        # 세로 줄무늬
-        num_stripes = random.randint(7, 15)
-        stripe_width = shirt_width / num_stripes
+    if pattern_type == "Vertical Stripe":
+        # 세로 줄무늬 (Main/Secondary 색상 번갈아 사용)
+        num_stripes = random.randint(3, 10)
+        stripe_width = flag_width / num_stripes
+        stripe_color_set = [C1, C2, C3]
+        
         for i in range(num_stripes):
-            if i % 2 != 0:
-                ax.add_patch(Rectangle((pattern_x_min + i * stripe_width, pattern_y_min), stripe_width, pattern_y_max - pattern_y_min,
-                                       facecolor=C2, alpha=0.9, edgecolor='none'))
-    
-    elif pattern_type == "Hoops":
-        # 가로 줄무늬
-        num_hoops = random.randint(5, 9)
-        hoop_height = shirt_height / num_hoops
-        for i in range(num_hoops):
-            if i % 2 != 0:
-                ax.add_patch(Rectangle((pattern_x_min, pattern_y_min + i * hoop_height), shirt_width, hoop_height,
-                                       facecolor=C2, alpha=0.9, edgecolor='none'))
-
-    elif pattern_type == "Dots":
-        # 도트 패턴
-        num_dots = random.randint(50, 100)
-        dot_color = random.choice([C2, C3])
-        for _ in range(num_dots):
-            x = random.uniform(pattern_x_min + 0.5, pattern_x_max - 0.5)
-            y = random.uniform(pattern_y_min + 0.5, pattern_y_max - 0.5)
-            dot_radius = random.uniform(0.2, 0.5)
-            ax.add_patch(Circle((x, y), dot_radius, facecolor=dot_color, alpha=0.7, edgecolor='none'))
+            color_index = (i + random.randint(0, 2)) % 3 # 랜덤하게 시작 색상 선택
+            current_color = stripe_color_set[color_index]
             
-    elif pattern_type == "Checkers":
-        # 체크 패턴
-        num_squares = random.randint(6, 12)
-        square_size = shirt_width / num_squares
-        checker_color = random.choice([C2, C3])
-        for i in range(num_squares):
-            for j in range(num_squares):
-                # Y축 범위 조정: 패턴을 가슴 아래로 제한
-                if (i + j) % 2 != 0:
-                    x = pattern_x_min + i * square_size
-                    y = pattern_y_min + j * square_size
-                    ax.add_patch(Rectangle((x, y), square_size, square_size,
-                                           facecolor=checker_color, alpha=0.7, edgecolor='none'))
+            # 메인 색상이 아니면 덮어씌움
+            if current_color != C1:
+                 ax.add_patch(Rectangle((i * stripe_width, 0), stripe_width, flag_height, 
+                                       facecolor=current_color, alpha=0.9, edgecolor='none'))
+
+    elif pattern_type == "Horizontal Stripe":
+        # 가로 줄무늬
+        num_stripes = random.randint(3, 7)
+        stripe_height = flag_height / num_stripes
+        stripe_color_set = [C1, C2, C3]
+        
+        for i in range(num_stripes):
+            color_index = (i + random.randint(0, 2)) % 3 
+            current_color = stripe_color_set[color_index]
+            
+            if current_color != C1:
+                ax.add_patch(Rectangle((0, i * stripe_height), flag_width, stripe_height, 
+                                       facecolor=current_color, alpha=0.9, edgecolor='none'))
+
+    elif pattern_type == "Diagonal Cross":
+        # 대각선 십자가 패턴 (C2 색상 사용)
+        diag_color = C2
+        line_thickness = random.uniform(1.0, 1.5)
+        
+        # X자 형태로 두꺼운 선 그리기 (좌상단 -> 우하단)
+        ax.plot([0, flag_width], [flag_height, 0], color=diag_color, 
+                linewidth=line_thickness * 10, alpha=0.7)
+        # X자 형태로 두꺼운 선 그리기 (좌하단 -> 우상단)
+        ax.plot([0, flag_width], [0, flag_height], color=diag_color, 
+                linewidth=line_thickness * 10, alpha=0.7)
+        
+        # 중앙에 패턴 색상(C3)으로 원이나 사각형 추가
+        center_shape_size = random.uniform(2, 4)
+        ax.add_patch(Rectangle((flag_width/2 - center_shape_size/2, flag_height/2 - center_shape_size/2), 
+                               center_shape_size, center_shape_size, 
+                               facecolor=C3, edgecolor='black', linewidth=0.5, alpha=0.9))
+
+    elif pattern_type == "Corner Quarter":
+        # 4분할 디자인 (Main, Secondary 색상 사용)
+        quarter_color = C2
+        
+        # 좌상단
+        ax.add_patch(Rectangle((0, flag_height/2), flag_width/2, flag_height/2, 
+                               facecolor=quarter_color, alpha=0.9, edgecolor='none'))
+        # 우하단
+        ax.add_patch(Rectangle((flag_width/2, 0), flag_width/2, flag_height/2, 
+                               facecolor=quarter_color, alpha=0.9, edgecolor='none'))
     
-    # 5. 로고 및 스폰서 영역 (패턴 위에 겹쳐서 그립니다)
-    # 로고
-    ax.add_patch(Circle((0, 4.5), 1.2, facecolor=C3, edgecolor=C2, linewidth=0.5, alpha=0.8)) 
-    # 스폰서
-    ax.add_patch(Rectangle((-3.5, 2.5), 7, 1.2, facecolor=C3, edgecolor=C2, linewidth=0.5, alpha=0.8)) 
+    # 3. 깃대 영역 (메인 깃발 디자인을 덮지 않도록 맨 왼쪽)
+    pole_width = 1.0
+    ax.add_patch(Rectangle((-pole_width, 0), pole_width, flag_height, 
+                           facecolor='grey', edgecolor='black', linewidth=0.5))
+
 
 # =========================================================
 # 3. Streamlit 앱 구성 (이전과 동일)
 # =========================================================
 
 def main():
-    st.set_page_config(page_title="유니폼 생성 예술", layout="wide")
-    st.title("👕 데이터 기반 랜덤 유니폼 생성기")
-    st.markdown("축구팀 색상을 활용하여 유니폼 패턴을 생성합니다. (생성 예술)")
+    st.set_page_config(page_title="깃발 생성 예술", layout="wide")
+    st.title("🚩 데이터 기반 랜덤 깃발 디자인 생성기")
+    st.markdown("축구팀 색상(데이터)을 활용하여 추상적인 깃발 패턴(생성 예술)을 만듭니다.")
     st.markdown("---")
     
-    st.sidebar.header("🎨 유니폼 설정")
+    st.sidebar.header("🎨 깃발 설정")
     
     team_list = sorted(TEAM_COLORS.keys())
     selected_team = st.sidebar.selectbox(
@@ -179,7 +154,7 @@ def main():
         team_list
     )
     
-    pattern_options = ["Stripe", "Hoops", "Dots", "Checkers"]
+    pattern_options = ["Vertical Stripe", "Horizontal Stripe", "Diagonal Cross", "Corner Quarter"]
     selected_pattern = st.sidebar.selectbox(
         "패턴 유형을 선택하세요:",
         pattern_options,
@@ -231,17 +206,17 @@ def main():
 
         st.markdown("---")
 
-        st.subheader("생성된 랜덤 유니폼 (Generative Art Output)")
+        st.subheader("생성된 랜덤 깃발 디자인 (Generative Art Output)")
         
         if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
             
-        fig, ax = plt.subplots(figsize=(7, 7))
-        draw_uniform(ax, colors_data, selected_pattern)
+        fig, ax = plt.subplots(figsize=(8, 6)) # 깃발 비율에 맞춰 사이즈 조정
+        draw_flag(ax, colors_data, selected_pattern)
         
-        ax.set_xlim(-10, 10)
-        ax.set_ylim(-8, 8)
+        ax.set_xlim(-1, 16) # 깃대 포함
+        ax.set_ylim(-1, 11)
         ax.axis('off')
         plt.tight_layout()
         
@@ -251,11 +226,11 @@ def main():
         col_dl, col_blank = st.columns([1, 4])
         
         with col_dl:
-            file_name = f"{selected_team.replace(' ', '_')}_uniform_{selected_pattern}_{seed}.png"
+            file_name = f"{selected_team.replace(' ', '_')}_flag_{selected_pattern}_{seed}.png"
             buf = fig.get_figure().canvas.buffer_rgba()
             
             st.download_button(
-                label="🖼️ 유니폼 이미지 다운로드 (PNG)",
+                label="🖼️ 깃발 이미지 다운로드 (PNG)",
                 data=buf.tobytes(),
                 file_name=file_name,
                 mime="image/png"
